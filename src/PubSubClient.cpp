@@ -6,6 +6,7 @@
 
 #include "PubSubClient.h"
 #include "Arduino.h"
+#include "WiFiClientSecure.h"
 
 PubSubClient::PubSubClient() {
     this->_state = MQTT_DISCONNECTED;
@@ -102,18 +103,22 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
 }
 
 boolean PubSubClient::connect(const char *id) {
-    return connect(id,NULL,NULL,0,0,0,0);
+    return connect(id,NULL,NULL,0,0,0,0, NULL);
 }
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass) {
-    return connect(id,user,pass,0,0,0,0);
+    return connect(id,user,pass,0,0,0,0, NULL);
+}
+
+boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char *tlsVerificationFingerprint) {
+    return connect(id,user,pass,0,0,0,0, tlsVerificationFingerprint);
 }
 
 boolean PubSubClient::connect(const char *id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage) {
-    return connect(id,NULL,NULL,willTopic,willQos,willRetain,willMessage);
+    return connect(id,NULL,NULL,willTopic,willQos,willRetain,willMessage, NULL);
 }
 
-boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage) {
+boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, const char *tlsVerificationFingerprint) {
     if (!connected()) {
         int result = 0;
 
@@ -122,7 +127,21 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
         } else {
             result = _client->connect(this->ip, this->port);
         }
+
         if (result == 1) {
+
+            // If there is a fingerprint given, verify TLS connection
+            if (tlsVerificationFingerprint)
+            {
+              WiFiClientSecure* clientsecure = static_cast<WiFiClientSecure*>(_client);
+
+              if (clientsecure->verify(tlsVerificationFingerprint, this->domain) == false)
+              {
+                  _state = -MQTT_CONNECTION_TLS_VERIFICATION_FAILED;
+                  return false;
+              }
+            }
+
             nextMsgId = 1;
             // Leave room in the buffer for header and variable length field
             uint16_t length = 5;

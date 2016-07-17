@@ -42,16 +42,17 @@
 //#define MQTT_MAX_TRANSFER_SIZE 80
 
 // Possible values for client.state()
-#define MQTT_CONNECTION_TIMEOUT     -4
-#define MQTT_CONNECTION_LOST        -3
-#define MQTT_CONNECT_FAILED         -2
-#define MQTT_DISCONNECTED           -1
-#define MQTT_CONNECTED               0
-#define MQTT_CONNECT_BAD_PROTOCOL    1
-#define MQTT_CONNECT_BAD_CLIENT_ID   2
-#define MQTT_CONNECT_UNAVAILABLE     3
-#define MQTT_CONNECT_BAD_CREDENTIALS 4
-#define MQTT_CONNECT_UNAUTHORIZED    5
+#define MQTT_CONNECTION_TLS_VERIFICATION_FAILED    -5
+#define MQTT_CONNECTION_TIMEOUT                    -4
+#define MQTT_CONNECTION_LOST                       -3
+#define MQTT_CONNECT_FAILED                        -2
+#define MQTT_DISCONNECTED                          -1
+#define MQTT_CONNECTED                              0
+#define MQTT_CONNECT_BAD_PROTOCOL                   1
+#define MQTT_CONNECT_BAD_CLIENT_ID                  2
+#define MQTT_CONNECT_UNAVAILABLE                    3
+#define MQTT_CONNECT_BAD_CREDENTIALS                4
+#define MQTT_CONNECT_UNAUTHORIZED                   5
 
 #define MQTTCONNECT     1 << 4  // Client request to connect to Server
 #define MQTTCONNACK     2 << 4  // Connect Acknowledgment
@@ -124,8 +125,9 @@ public:
 
    boolean connect(const char* id);
    boolean connect(const char* id, const char* user, const char* pass);
+   boolean connect(const char* id, const char* user, const char* pass, const char *tlsVerificationFingerprint);
    boolean connect(const char* id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
-   boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
+   boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, const char *tlsVerificationFingerprint);
    void disconnect();
    boolean publish(const char* topic, const char* payload);
    boolean publish(const char* topic, const char* payload, boolean retained);
