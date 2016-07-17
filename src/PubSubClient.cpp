@@ -130,14 +130,14 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
 
         if (result == 1) {
 
-            // If there is a fingerprint given, verify TLS connection
-            if (tlsVerificationFingerprint)
+            // If there is a domain and a fingerprint given, verify TLS connection
+            if (domain && tlsVerificationFingerprint)
             {
-              WiFiClientSecure* clientsecure = static_cast<WiFiClientSecure*>(_client);
+              WiFiClientSecure* clientSecure = static_cast<WiFiClientSecure*>(_client);
 
-              if (clientsecure->verify(tlsVerificationFingerprint, this->domain) == false)
+              if (clientSecure->verify(tlsVerificationFingerprint, this->domain) == false)
               {
-                  _state = -MQTT_CONNECTION_TLS_VERIFICATION_FAILED;
+                  _state = MQTT_CONNECTION_TLS_VERIFICATION_FAILED;
                   return false;
               }
             }
