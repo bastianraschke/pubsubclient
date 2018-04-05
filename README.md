@@ -20,7 +20,6 @@ Full API documentation is available here: https://pubsubclient.knolleary.net
  - The client uses MQTT 3.1.1 by default. It can be changed to use MQTT 3.1 by
    changing value of `MQTT_VERSION` in `PubSubClient.h`.
 
-
 ## Compatible Hardware
 
 The library uses the Arduino Ethernet Client api for interacting with the
@@ -45,3 +44,12 @@ such as the Nanode or the Nuelectronics Ethernet Shield. For those, there is an
 ## License
 
 This code is released under the MIT License.
+
+## Changes of this fork
+
+This fork allows to use MQTT via TLS with server certificate fingerprint verification. It is only available on ESP8266 because of the usage of the class `WiFiClientSecure`. Initialize the `PubSubClient` object like in the following example:
+
+    WiFiClientSecure secureWifiClient = WiFiClientSecure();
+    PubSubClient mqttClient = PubSubClient(secureWifiClient, "XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX"); 
+
+**Note:** Always choose the fingerprint of the server certificate and not of the CA certificate that signed the server certificate.
