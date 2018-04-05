@@ -6,7 +6,6 @@
 
 #include "PubSubClient.h"
 #include "Arduino.h"
-#include "WiFiClientSecure.h"
 
 PubSubClient::PubSubClient() {
     this->_state = MQTT_DISCONNECTED;
@@ -21,18 +20,29 @@ PubSubClient::PubSubClient(Client& client) {
     this->stream = NULL;
 }
 
+#ifdef ESP8266
+PubSubClient::PubSubClient(WiFiClientSecure& client, const char* tlsVerificationFingerprint) {
+    this->_state = MQTT_DISCONNECTED;
+    setClient(client);
+    this->stream = NULL;
+    this->tlsVerificationFingerprint = tlsVerificationFingerprint;
+}
+#endif
+
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setServer(addr, port);
     setClient(client);
     this->stream = NULL;
 }
+
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(addr,port);
     setClient(client);
     setStream(stream);
 }
+
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setServer(addr, port);
@@ -40,6 +50,7 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATUR
     setClient(client);
     this->stream = NULL;
 }
+
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(addr,port);
@@ -54,12 +65,14 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client) {
     setClient(client);
     this->stream = NULL;
 }
+
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(ip,port);
     setClient(client);
     setStream(stream);
 }
+
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setServer(ip, port);
@@ -67,6 +80,7 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, 
     setClient(client);
     this->stream = NULL;
 }
+
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(ip,port);
@@ -81,12 +95,14 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client) {
     setClient(client);
     this->stream = NULL;
 }
+
 PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(domain,port);
     setClient(client);
     setStream(stream);
 }
+
 PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setServer(domain,port);
@@ -94,6 +110,7 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
     setClient(client);
     this->stream = NULL;
 }
+
 PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(domain,port);
@@ -103,22 +120,18 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
 }
 
 boolean PubSubClient::connect(const char *id) {
-    return connect(id,NULL,NULL,0,0,0,0, NULL);
+    return connect(id,NULL,NULL,0,0,0,0);
 }
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass) {
-    return connect(id,user,pass,0,0,0,0, NULL);
-}
-
-boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char *tlsVerificationFingerprint) {
-    return connect(id,user,pass,0,0,0,0, tlsVerificationFingerprint);
+    return connect(id,user,pass,0,0,0,0);
 }
 
 boolean PubSubClient::connect(const char *id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage) {
-    return connect(id,NULL,NULL,willTopic,willQos,willRetain,willMessage, NULL);
+    return connect(id,NULL,NULL,willTopic,willQos,willRetain,willMessage);
 }
 
-boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, const char *tlsVerificationFingerprint) {
+boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage) {
     if (!connected()) {
         int result = 0;
 
@@ -130,17 +143,20 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
 
         if (result == 1) {
 
+            #ifdef ESP8266
             // If there is a domain and a fingerprint given, verify TLS connection
-            if (domain && tlsVerificationFingerprint)
+            if (domain && this->tlsVerificationFingerprint != NULL)
             {
-              WiFiClientSecure* clientSecure = static_cast<WiFiClientSecure*>(_client);
+                // The cast is safe because the fingerprint can only be set together with the WiFiClientSecure constructor
+                WiFiClientSecure* clientSecure = static_cast<WiFiClientSecure*>(_client);
 
-              if (clientSecure->verify(tlsVerificationFingerprint, this->domain) == false)
-              {
-                  _state = MQTT_CONNECTION_TLS_VERIFICATION_FAILED;
-                  return false;
-              }
+                if (clientSecure->verify(this->tlsVerificationFingerprint, this->domain) == false)
+                {
+                    _state = MQTT_CONNECTION_TLS_VERIFICATION_FAILED;
+                    return false;
+                }
             }
+            #endif
 
             nextMsgId = 1;
             // Leave room in the buffer for header and variable length field

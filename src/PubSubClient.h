@@ -12,6 +12,10 @@
 #include "Client.h"
 #include "Stream.h"
 
+#ifdef ESP8266
+#include "WiFiClientSecure.h"
+#endif
+
 #define MQTT_VERSION_3_1      3
 #define MQTT_VERSION_3_1_1    4
 
@@ -84,6 +88,7 @@
 class PubSubClient {
 private:
    Client* _client;
+   const char* tlsVerificationFingerprint = NULL;
    uint8_t buffer[MQTT_MAX_PACKET_SIZE];
    uint16_t nextMsgId;
    unsigned long lastOutActivity;
@@ -103,6 +108,11 @@ private:
 public:
    PubSubClient();
    PubSubClient(Client& client);
+
+   #ifdef ESP8266
+   PubSubClient(WiFiClientSecure& client, const char* tlsVerificationFingerprint);
+   #endif
+
    PubSubClient(IPAddress, uint16_t, Client& client);
    PubSubClient(IPAddress, uint16_t, Client& client, Stream&);
    PubSubClient(IPAddress, uint16_t, MQTT_CALLBACK_SIGNATURE,Client& client);
@@ -125,9 +135,8 @@ public:
 
    boolean connect(const char* id);
    boolean connect(const char* id, const char* user, const char* pass);
-   boolean connect(const char* id, const char* user, const char* pass, const char *tlsVerificationFingerprint);
    boolean connect(const char* id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
-   boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, const char *tlsVerificationFingerprint);
+   boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
    void disconnect();
    boolean publish(const char* topic, const char* payload);
    boolean publish(const char* topic, const char* payload, boolean retained);
